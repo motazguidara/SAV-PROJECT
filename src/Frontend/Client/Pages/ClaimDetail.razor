@@ -1,0 +1,65 @@
+@page "/claims/{ClaimId:guid}"
+@attribute [Authorize]
+@inject ApiClient Api
+
+<MudText Typo="Typo.h4" Class="mb-4">Claim Details</MudText>
+
+@if (_loading)
+{
+    <MudSkeleton Height="200px" />
+}
+else if (_claim is null)
+{
+    <MudText>Claim not found.</MudText>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.subtitle1">Status</MudText>
+        <MudChip Color="Color.Primary">@_claim.Status</MudChip>
+        <MudDivider Class="my-3" />
+        <MudText Typo="Typo.subtitle2">Description</MudText>
+        <MudText>@_claim.Description</MudText>
+    </MudPaper>
+
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Interventions</MudText>
+        @if (_interventions.Count == 0)
+        {
+            <MudText>No interventions yet.</MudText>
+        }
+        else
+        {
+            <MudTable Items="_interventions" Dense="true">
+                <HeaderContent>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Scheduled</MudTh>
+                    <MudTh>Invoice</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.Status</MudTd>
+                    <MudTd>@context.ScheduledAt?.ToLocalTime().ToString("g")</MudTd>
+                    <MudTd>@context.InvoiceTotal.ToString("C")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public Guid ClaimId { get; set; }
+
+    private bool _loading = true;
+    private ClaimResponse? _claim;
+    private List<InterventionResponse> _interventions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _claim = await Api.GetClaimAsync(ClaimId);
+        if (_claim is not null)
+        {
+            _interventions = (await Api.GetInterventionsByClaimAsync(ClaimId)).ToList();
+        }
+        _loading = false;
+    }
+}

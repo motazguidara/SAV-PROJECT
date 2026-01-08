@@ -1,0 +1,69 @@
+@page "/claims"
+@attribute [Authorize]
+@inject ApiClient Api
+@inject NavigationManager Navigation
+
+<MudText Typo="Typo.h4" Class="mb-4">My Claims</MudText>
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" Spacing="2" Class="mb-4">
+        <MudSelect T="ClaimStatus?" @bind-Value="_statusFilter" Label="Status">
+            <MudSelectItem Value="null">All</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.New">New</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.InProgress">In Progress</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.Resolved">Resolved</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.Rejected">Rejected</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Filled" OnClick="Load">Apply</MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudSkeleton Height="200px" />
+    }
+    else if (_claims.Count == 0)
+    {
+        <MudText>No claims found. Create your first claim.</MudText>
+    }
+    else
+    {
+        <MudTable Items="_claims" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>Article</MudTh>
+                <MudTh>Serial</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Created</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Article">@context.ArticleId</MudTd>
+                <MudTd DataLabel="Serial">@context.SerialNumber</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip Color="Color.Primary" Variant="Variant.Outlined">@context.Status</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Created">@context.CreatedAt.ToLocalTime().ToString("d")</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Text" OnClick="() => Navigation.NavigateTo($"/claims/{context.Id}")">View</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    private bool _loading = true;
+    private List<ClaimResponse> _claims = new();
+    private ClaimStatus? _statusFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _claims = (await Api.GetClaimsAsync(_statusFilter?.ToString())).ToList();
+        _loading = false;
+    }
+}
