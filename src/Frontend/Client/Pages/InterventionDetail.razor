@@ -1,0 +1,118 @@
+@page "/manager/interventions/{InterventionId:guid}"
+@attribute [Authorize(Roles = "SAV_MANAGER")]
+@inject ApiClient Api
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" Class="mb-4">Intervention Detail</MudText>
+
+@if (_loading)
+{
+    <MudSkeleton Height="200px" />
+}
+else if (_intervention is null)
+{
+    <MudText>Intervention not found.</MudText>
+}
+else
+{
+    <MudTabs>
+        <MudTabPanel Text="Info">
+            <MudText>Status: @_intervention.Status</MudText>
+            <MudText>Under Warranty: @_intervention.IsUnderWarranty</MudText>
+            <MudButton Variant="Variant.Filled" Disabled="_intervention.Status == InterventionStatus.Done" OnClick="Start">Start</MudButton>
+            <MudButton Variant="Variant.Outlined" Disabled="_intervention.Status == InterventionStatus.Done" OnClick="End">End</MudButton>
+        </MudTabPanel>
+        <MudTabPanel Text="Parts">
+            <MudTextField @bind-Value="_partName" Label="Part" />
+            <MudNumericField @bind-Value="_unitPrice" Label="Unit Price" />
+            <MudNumericField @bind-Value="_qty" Label="Qty" />
+            <MudButton Variant="Variant.Filled" Disabled="_intervention.Status == InterventionStatus.Done" OnClick="AddPart">Add</MudButton>
+            <MudTable Items="_invoice?.Lines" Dense="true">
+                <HeaderContent>
+                    <MudTh>Part</MudTh>
+                    <MudTh>Qty</MudTh>
+                    <MudTh>Total</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.PartName</MudTd>
+                    <MudTd>@context.Qty</MudTd>
+                    <MudTd>@context.LineTotal.ToString("C")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudTabPanel>
+        <MudTabPanel Text="Labor">
+            <MudNumericField @bind-Value="_labor" Label="Labor Cost" />
+            <MudButton Variant="Variant.Filled" Disabled="_intervention.Status == InterventionStatus.Done" OnClick="UpdateLabor">Update</MudButton>
+        </MudTabPanel>
+        <MudTabPanel Text="Invoice">
+            <MudText>Labor: @_invoice?.LaborCost.ToString("C")</MudText>
+            <MudText>Parts: @_invoice?.PartsTotal.ToString("C")</MudText>
+            <MudText Typo="Typo.h6">Total: @_invoice?.InvoiceTotal.ToString("C")</MudText>
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    [Parameter] public Guid InterventionId { get; set; }
+
+    private bool _loading = true;
+    private InterventionResponse? _intervention;
+    private InvoiceResponse? _invoice;
+    private string _partName = string.Empty;
+    private decimal _unitPrice;
+    private int _qty = 1;
+    private decimal _labor;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _intervention = await Api.GetInterventionAsync(InterventionId);
+        _invoice = await Api.GetInvoiceAsync(InterventionId);
+        _labor = _invoice?.LaborCost ?? 0;
+        _loading = false;
+    }
+
+    private async Task AddPart()
+    {
+        try
+        {
+            await Api.AddPartAsync(InterventionId, new AddPartRequest(_partName, _unitPrice, _qty));
+            Snackbar.Add("Part added.", Severity.Success);
+            await Load();
+        }
+        catch
+        {
+            Snackbar.Add("Unable to add part.", Severity.Error);
+        }
+    }
+
+    private async Task UpdateLabor()
+    {
+        try
+        {
+            await Api.UpdateLaborAsync(InterventionId, _labor);
+            Snackbar.Add("Labor updated.", Severity.Success);
+            await Load();
+        }
+        catch
+        {
+            Snackbar.Add("Unable to update labor.", Severity.Error);
+        }
+    }
+
+    private async Task Start()
+    {
+        await Api.StartInterventionAsync(InterventionId);
+        await Load();
+    }
+
+    private async Task End()
+    {
+        await Api.EndInterventionAsync(InterventionId);
+        await Load();
+    }
+}

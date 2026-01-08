@@ -1,0 +1,54 @@
+@page "/register"
+@inject ApiClient Api
+@inject SavAuthStateProvider AuthProvider
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudPaper Class="mx-auto pa-6" MaxWidth="500">
+    <MudText Typo="Typo.h5" Class="mb-4">Create your account</MudText>
+    <MudForm @ref="_form">
+        <MudTextField @bind-Value="_model.FullName" Label="Full name" Required="true" Immediate="true" />
+        <MudTextField @bind-Value="_model.Email" Label="Email" Required="true" Immediate="true" />
+        <MudTextField @bind-Value="_model.Password" Label="Password" InputType="InputType.Password" Required="true" Immediate="true" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Disabled="_loading" OnClick="OnRegister">Register</MudButton>
+        <MudButton Variant="Variant.Text" Class="mt-4" OnClick="() => Navigation.NavigateTo('/login')">Back to login</MudButton>
+    </MudForm>
+</MudPaper>
+
+@code {
+    private RegisterRequest _model = new(string.Empty, string.Empty, string.Empty);
+    private MudForm? _form;
+    private bool _loading;
+
+    private async Task OnRegister()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        await _form.Validate();
+        if (!_form.IsValid)
+        {
+            Snackbar.Add("Please fill in all required fields.", Severity.Warning);
+            return;
+        }
+
+        _loading = true;
+        try
+        {
+            var auth = await Api.RegisterAsync(_model);
+            await AuthProvider.SetTokenAsync(auth.AccessToken);
+            Snackbar.Add("Account created.", Severity.Success);
+            Navigation.NavigateTo("/");
+        }
+        catch
+        {
+            Snackbar.Add("Registration failed.", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

@@ -1,0 +1,82 @@
+@page "/manager/claims"
+@attribute [Authorize(Roles = "SAV_MANAGER")]
+@inject ApiClient Api
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" Class="mb-4">Claims Inbox</MudText>
+
+<MudPaper Class="pa-4">
+    <MudStack Row="true" Spacing="2" Class="mb-4">
+        <MudSelect T="ClaimStatus?" @bind-Value="_statusFilter" Label="Status">
+            <MudSelectItem Value="null">All</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.New">New</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.InProgress">In Progress</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.Resolved">Resolved</MudSelectItem>
+            <MudSelectItem Value="ClaimStatus.Rejected">Rejected</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Filled" OnClick="Load">Refresh</MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudSkeleton Height="200px" />
+    }
+    else if (_claims.Count == 0)
+    {
+        <MudText>No claims in this filter.</MudText>
+    }
+    else
+    {
+        <MudTable Items="_claims" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>Claim</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Created</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Id</MudTd>
+                <MudTd>@context.Status</MudTd>
+                <MudTd>@context.CreatedAt.ToLocalTime().ToString("g")</MudTd>
+                <MudTd>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Navigation.NavigateTo($"/manager/claims/{context.Id}")">Open</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => UpdateStatus(context.Id, ClaimStatus.InProgress)">Accept</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="() => UpdateStatus(context.Id, ClaimStatus.Rejected)">Reject</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    private bool _loading = true;
+    private List<ClaimResponse> _claims = new();
+    private ClaimStatus? _statusFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        _claims = (await Api.GetClaimsAsync(_statusFilter?.ToString())).ToList();
+        _loading = false;
+    }
+
+    private async Task UpdateStatus(Guid id, ClaimStatus status)
+    {
+        try
+        {
+            await Api.UpdateClaimStatusAsync(id, status);
+            Snackbar.Add("Claim updated.", Severity.Success);
+            await Load();
+        }
+        catch
+        {
+            Snackbar.Add("Unable to update claim.", Severity.Error);
+        }
+    }
+}

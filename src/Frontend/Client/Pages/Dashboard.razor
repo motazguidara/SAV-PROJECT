@@ -1,0 +1,49 @@
+@page "/"
+@attribute [Authorize]
+@inject ApiClient Api
+
+<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+@if (_loading)
+{
+    <MudSkeleton Height="120px" />
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle1">Total Claims</MudText>
+                <MudText Typo="Typo.h4">@_total</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle1">In Progress</MudText>
+                <MudText Typo="Typo.h4">@_inProgress</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.subtitle1">Resolved</MudText>
+                <MudText Typo="Typo.h4">@_resolved</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private bool _loading = true;
+    private int _total;
+    private int _inProgress;
+    private int _resolved;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var claims = await Api.GetClaimsAsync();
+        _total = claims.Count;
+        _inProgress = claims.Count(c => c.Status == ClaimStatus.InProgress);
+        _resolved = claims.Count(c => c.Status == ClaimStatus.Resolved);
+        _loading = false;
+    }
+}

@@ -1,0 +1,82 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@using System.Security.Claims
+
+<MudThemeProvider Theme="_theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Color="Color.Primary" Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h6">SAV Manager</MudText>
+        <MudSpacer />
+        <MudMenu Dense="true">
+            <ActivatorContent>
+                <MudButton Variant="Variant.Outlined" Color="Color.Inherit">@_userName</MudButton>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem OnClick="Logout">Logout</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </MudAppBar>
+
+    <MudDrawer Elevation="1" Variant="DrawerVariant.Responsive" @bind-Open="_drawerOpen">
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="/claims" Icon="@Icons.Material.Filled.ReceiptLong">My Claims</MudNavLink>
+            <MudNavLink Href="/claims/create" Icon="@Icons.Material.Filled.AddCircle">Create Claim</MudNavLink>
+            @if (_isManager)
+            {
+                <MudDivider Class="my-2" />
+                <MudNavLink Href="/manager/claims" Icon="@Icons.Material.Filled.Inbox">Claims Inbox</MudNavLink>
+                <MudNavLink Href="/manager/catalog" Icon="@Icons.Material.Filled.Inventory">Catalog Admin</MudNavLink>
+            }
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isManager;
+    private string _userName = "Guest";
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#2A6DF4",
+            Secondary = "#00A37A",
+            Background = "#F5F7FB",
+            AppbarBackground = "#2A6DF4"
+        }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = state.User;
+        _isManager = user.IsInRole("SAV_MANAGER");
+        _userName = user.Identity?.IsAuthenticated == true ? user.FindFirst("name")?.Value ?? user.Identity?.Name ?? "User" : "Guest";
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task Logout()
+    {
+        if (AuthStateProvider is SavAuthStateProvider savAuth)
+        {
+            await savAuth.LogoutAsync();
+        }
+        Navigation.NavigateTo("/login", true);
+    }
+}

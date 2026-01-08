@@ -1,0 +1,111 @@
+@page "/manager/claims/{ClaimId:guid}"
+@attribute [Authorize(Roles = "SAV_MANAGER")]
+@inject ApiClient Api
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" Class="mb-4">Claim Detail</MudText>
+
+@if (_loading)
+{
+    <MudSkeleton Height="200px" />
+}
+else if (_claim is null)
+{
+    <MudText>Claim not found.</MudText>
+}
+else
+{
+    <MudPaper Class="pa-4 mb-4">
+        <MudText Typo="Typo.subtitle1">Status: @_claim.Status</MudText>
+        <MudText Typo="Typo.subtitle2">Serial: @_claim.SerialNumber</MudText>
+        <MudText Typo="Typo.subtitle2">Purchase: @_claim.PurchaseDate</MudText>
+        <MudText Typo="Typo.subtitle2">Description</MudText>
+        <MudText>@_claim.Description</MudText>
+        <MudDivider Class="my-3" />
+        <MudButton Variant="Variant.Filled" OnClick="OpenInterventionDialog">Create Intervention</MudButton>
+        <MudButton Variant="Variant.Outlined" Class="ml-2" OnClick="() => UpdateStatus(ClaimStatus.Resolved)">Resolve</MudButton>
+    </MudPaper>
+
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-2">Interventions</MudText>
+        <MudTable Items="_interventions" Dense="true">
+            <HeaderContent>
+                <MudTh>Status</MudTh>
+                <MudTh>Invoice</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Status</MudTd>
+                <MudTd>@context.InvoiceTotal.ToString("C")</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}
+
+<MudDialog @bind-IsOpen="_dialogOpen">
+    <DialogContent>
+        <MudText Typo="Typo.h6">New Intervention</MudText>
+        <MudTextField @bind-Value="_notes" Label="Notes" Lines="3" />
+        <MudNumericField @bind-Value="_labor" Label="Labor Cost" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CreateIntervention" Color="Color.Primary">Create</MudButton>
+        <MudButton OnClick="() => _dialogOpen = false">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public Guid ClaimId { get; set; }
+
+    private bool _loading = true;
+    private ClaimResponse? _claim;
+    private List<InterventionResponse> _interventions = new();
+    private bool _dialogOpen;
+    private string _notes = string.Empty;
+    private decimal _labor;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _claim = await Api.GetClaimAsync(ClaimId);
+        _interventions = (await Api.GetInterventionsByClaimAsync(ClaimId)).ToList();
+        _loading = false;
+    }
+
+    private void OpenInterventionDialog()
+    {
+        _dialogOpen = true;
+    }
+
+    private async Task CreateIntervention()
+    {
+        try
+        {
+            var intervention = await Api.CreateInterventionAsync(new CreateInterventionRequest(ClaimId, _notes, _labor));
+            _dialogOpen = false;
+            _interventions.Add(intervention);
+            Snackbar.Add("Intervention created.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Unable to create intervention.", Severity.Error);
+        }
+    }
+
+    private async Task UpdateStatus(ClaimStatus status)
+    {
+        try
+        {
+            await Api.UpdateClaimStatusAsync(ClaimId, status);
+            Snackbar.Add("Claim updated.", Severity.Success);
+            await Load();
+        }
+        catch
+        {
+            Snackbar.Add("Unable to update claim.", Severity.Error);
+        }
+    }
+}
