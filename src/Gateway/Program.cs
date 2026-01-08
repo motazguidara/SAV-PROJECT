@@ -7,7 +7,15 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("frontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5005").AllowAnyHeader().AllowAnyMethod();
+        var origins = builder.Configuration.GetSection("FrontendOrigins").Get<string[]>();
+        if (origins is { Length: > 0 })
+        {
+            policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod();
+        }
+        else
+        {
+            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        }
     });
 });
 
