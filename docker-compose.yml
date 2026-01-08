@@ -1,0 +1,136 @@
+version: "3.9"
+
+services:
+  identity-service:
+    build:
+      context: ./src
+      dockerfile: IdentityService/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      identity-db:
+        condition: service_healthy
+    ports:
+      - "5001:8080"
+
+  catalog-service:
+    build:
+      context: ./src
+      dockerfile: CatalogService/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    ports:
+      - "5002:8080"
+
+  claims-service:
+    build:
+      context: ./src
+      dockerfile: CustomerClaimsService/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      claims-db:
+        condition: service_healthy
+    ports:
+      - "5003:8080"
+
+  interventions-service:
+    build:
+      context: ./src
+      dockerfile: InterventionsService/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      interventions-db:
+        condition: service_healthy
+    ports:
+      - "5004:8080"
+
+  gateway:
+    build:
+      context: ./src
+      dockerfile: Gateway/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      identity-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      claims-service:
+        condition: service_started
+      interventions-service:
+        condition: service_started
+    ports:
+      - "5000:8080"
+
+  frontend:
+    build:
+      context: ./src
+      dockerfile: Frontend/Server/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      gateway:
+        condition: service_started
+    ports:
+      - "5005:8080"
+
+  identity-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: identity_db
+      POSTGRES_USER: identity
+      POSTGRES_PASSWORD: identitypw
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U identity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  catalog-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalogpw
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  claims-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: claims_db
+      POSTGRES_USER: claims
+      POSTGRES_PASSWORD: claimspw
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claims"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  interventions-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: interventions_db
+      POSTGRES_USER: interventions
+      POSTGRES_PASSWORD: interventionspw
+    ports:
+      - "5436:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U interventions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

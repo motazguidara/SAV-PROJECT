@@ -1,0 +1,81 @@
+@page "/manager/catalog"
+@attribute [Authorize(Roles = "SAV_MANAGER")]
+@inject ApiClient Api
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h4" Class="mb-4">Catalog Admin</MudText>
+
+<MudPaper Class="pa-4 mb-4">
+    <MudText Typo="Typo.subtitle1">Add Article</MudText>
+    <MudTextField @bind-Value="_name" Label="Name" />
+    <MudTextField @bind-Value="_brand" Label="Brand" />
+    <MudNumericField @bind-Value="_warranty" Label="Warranty Months" />
+    <MudButton Variant="Variant.Filled" OnClick="Create">Create</MudButton>
+</MudPaper>
+
+<MudPaper Class="pa-4">
+    @if (_loading)
+    {
+        <MudSkeleton Height="200px" />
+    }
+    else
+    {
+        <MudTable Items="_articles" Dense="true">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Brand</MudTh>
+                <MudTh>Warranty</MudTh>
+                <MudTh>Active</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Name</MudTd>
+                <MudTd>@context.Brand</MudTd>
+                <MudTd>@context.WarrantyMonths</MudTd>
+                <MudTd>@context.Active</MudTd>
+                <MudTd>
+                    <MudButton Variant="Variant.Text" Disabled="!context.Active" OnClick="() => Deactivate(context.Id)">Deactivate</MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
+
+@code {
+    private bool _loading = true;
+    private List<ArticleResponse> _articles = new();
+    private string _name = string.Empty;
+    private string _brand = string.Empty;
+    private int _warranty = 12;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _articles = (await Api.GetArticlesAsync()).ToList();
+        _loading = false;
+    }
+
+    private async Task Create()
+    {
+        try
+        {
+            await Api.CreateArticleAsync(new CreateArticleRequest(_name, _brand, _warranty));
+            Snackbar.Add("Article created.", Severity.Success);
+            await Load();
+        }
+        catch
+        {
+            Snackbar.Add("Unable to create article.", Severity.Error);
+        }
+    }
+
+    private async Task Deactivate(Guid id)
+    {
+        await Api.DeactivateArticleAsync(id);
+        await Load();
+    }
+}
