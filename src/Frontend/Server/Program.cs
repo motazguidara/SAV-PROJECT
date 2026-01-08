@@ -15,6 +15,19 @@ builder.Services.AddResponseCompression(options =>
 
 var app = builder.Build();
 app.UseResponseCompression();
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path;
+    if ((path.StartsWithSegments("/_framework") && path.Value?.EndsWith(".map", StringComparison.OrdinalIgnoreCase) == true)
+        || path.Equals("/favicon.ico", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWithSegments("/.well-known/appspecific"))
+    {
+        context.Response.StatusCode = StatusCodes.Status204NoContent;
+        return;
+    }
+
+    await next();
+});
 app.UseBlazorFrameworkFiles();
 var contentTypeProvider = new FileExtensionContentTypeProvider();
 contentTypeProvider.Mappings[".wasm"] = "application/wasm";
