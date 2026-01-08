@@ -22,9 +22,17 @@ public class SavAuthStateProvider : AuthenticationStateProvider
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
 
-        var jwt = _handler.ReadJwtToken(token);
-        var identity = new ClaimsIdentity(jwt.Claims, "jwt");
-        return new AuthenticationState(new ClaimsPrincipal(identity));
+        try
+        {
+            var jwt = _handler.ReadJwtToken(token);
+            var identity = new ClaimsIdentity(jwt.Claims, "jwt");
+            return new AuthenticationState(new ClaimsPrincipal(identity));
+        }
+        catch
+        {
+            await _storage.ClearAsync();
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        }
     }
 
     public async Task SetTokenAsync(string token)

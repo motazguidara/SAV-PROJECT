@@ -69,7 +69,16 @@ static async Task SeedRolesAndAdminAsync(WebApplication app)
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var db = scope.ServiceProvider.GetRequiredService<IdentityDb>();
-    await db.Database.MigrateAsync();
+    var applied = await db.Database.GetAppliedMigrationsAsync();
+    var pending = await db.Database.GetPendingMigrationsAsync();
+    if (applied.Any() || pending.Any())
+    {
+        await db.Database.MigrateAsync();
+    }
+    else
+    {
+        await db.Database.EnsureCreatedAsync();
+    }
 
     var roles = new[] { "CLIENT", "SAV_MANAGER" };
     foreach (var role in roles)

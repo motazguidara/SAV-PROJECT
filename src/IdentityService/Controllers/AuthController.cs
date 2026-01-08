@@ -75,7 +75,7 @@ public class AuthController : ControllerBase
         }
 
         var roles = await _userManager.GetRolesAsync(user);
-        return Ok(new UserProfile(user.Id, user.Email ?? string.Empty, user.FullName, roles));
+        return Ok(new UserProfile(user.Id, user.Email ?? string.Empty, user.FullName, roles.ToArray()));
     }
 
     private AuthResponse BuildToken(ApplicationUser user, IEnumerable<string> roles)

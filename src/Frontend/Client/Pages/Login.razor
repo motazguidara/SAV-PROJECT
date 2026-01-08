@@ -7,17 +7,19 @@
 <MudPaper Class="mx-auto pa-6" MaxWidth="400">
     <MudText Typo="Typo.h5" Class="mb-4">Welcome back</MudText>
     <MudForm @ref="_form">
-        <MudTextField @bind-Value="_model.Email" Label="Email" Required="true" Immediate="true" />
-        <MudTextField @bind-Value="_model.Password" Label="Password" InputType="InputType.Password" Required="true" Immediate="true" />
+        <MudTextField @bind-Value="_email" Label="Email" Required="true" Immediate="true" />
+        <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Required="true" Immediate="true" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Disabled="_loading" OnClick="OnLogin">Login</MudButton>
-        <MudButton Variant="Variant.Text" Color="Color.Secondary" Class="mt-4" OnClick="() => Navigation.NavigateTo('/register')">Register</MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" Class="mt-4" OnClick="GoToRegister">Register</MudButton>
     </MudForm>
 </MudPaper>
 
 @code {
-    private readonly LoginRequest _model = new(string.Empty, string.Empty);
+    private string _email = string.Empty;
+    private string _password = string.Empty;
     private MudForm? _form;
     private bool _loading;
+    private void GoToRegister() => Navigation.NavigateTo("/register");
 
     private async Task OnLogin()
     {
@@ -36,7 +38,7 @@
         _loading = true;
         try
         {
-            var auth = await Api.LoginAsync(_model);
+            var auth = await Api.LoginAsync(new LoginRequest(_email, _password));
             await AuthProvider.SetTokenAsync(auth.AccessToken);
             Snackbar.Add("Logged in successfully.", Severity.Success);
             Navigation.NavigateTo("/");

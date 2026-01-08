@@ -7,18 +7,21 @@
 <MudPaper Class="mx-auto pa-6" MaxWidth="500">
     <MudText Typo="Typo.h5" Class="mb-4">Create your account</MudText>
     <MudForm @ref="_form">
-        <MudTextField @bind-Value="_model.FullName" Label="Full name" Required="true" Immediate="true" />
-        <MudTextField @bind-Value="_model.Email" Label="Email" Required="true" Immediate="true" />
-        <MudTextField @bind-Value="_model.Password" Label="Password" InputType="InputType.Password" Required="true" Immediate="true" />
+        <MudTextField @bind-Value="_fullName" Label="Full name" Required="true" Immediate="true" />
+        <MudTextField @bind-Value="_email" Label="Email" Required="true" Immediate="true" />
+        <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Required="true" Immediate="true" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Disabled="_loading" OnClick="OnRegister">Register</MudButton>
-        <MudButton Variant="Variant.Text" Class="mt-4" OnClick="() => Navigation.NavigateTo('/login')">Back to login</MudButton>
+        <MudButton Variant="Variant.Text" Class="mt-4" OnClick="GoToLogin">Back to login</MudButton>
     </MudForm>
 </MudPaper>
 
 @code {
-    private RegisterRequest _model = new(string.Empty, string.Empty, string.Empty);
+    private string _fullName = string.Empty;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
     private MudForm? _form;
     private bool _loading;
+    private void GoToLogin() => Navigation.NavigateTo("/login");
 
     private async Task OnRegister()
     {
@@ -37,7 +40,7 @@
         _loading = true;
         try
         {
-            var auth = await Api.RegisterAsync(_model);
+            var auth = await Api.RegisterAsync(new RegisterRequest(_fullName, _email, _password));
             await AuthProvider.SetTokenAsync(auth.AccessToken);
             Snackbar.Add("Account created.", Severity.Success);
             Navigation.NavigateTo("/");

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Polly;
+using Polly.Extensions.Http;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,14 +42,16 @@ builder.Services.AddHttpClient<ClaimsClient>(client =>
     })
     .AddHttpMessageHandler<CorrelationIdHandler>()
     .AddHttpMessageHandler<AuthHeaderHandler>()
-    .AddPolicyHandler(Policy.Handle<HttpRequestException>().WaitAndRetryAsync(3, retry => TimeSpan.FromMilliseconds(200 * retry)));
+    .AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError()
+        .WaitAndRetryAsync(3, retry => TimeSpan.FromMilliseconds(200 * retry)));
 
 builder.Services.AddHttpClient<CatalogClient>(client =>
     {
         client.BaseAddress = new Uri(builder.Configuration["Services:Catalog"] ?? string.Empty);
     })
     .AddHttpMessageHandler<CorrelationIdHandler>()
-    .AddPolicyHandler(Policy.Handle<HttpRequestException>().WaitAndRetryAsync(3, retry => TimeSpan.FromMilliseconds(200 * retry)));
+    .AddPolicyHandler(HttpPolicyExtensions.HandleTransientHttpError()
+        .WaitAndRetryAsync(3, retry => TimeSpan.FromMilliseconds(200 * retry)));
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

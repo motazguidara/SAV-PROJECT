@@ -7,15 +7,15 @@
 
 <MudPaper Class="pa-4" MaxWidth="600">
     <MudForm @ref="_form">
-        <MudSelect T="Guid" @bind-Value="_model.ArticleId" Label="Article" Required="true">
+        <MudSelect T="Guid" @bind-Value="_articleId" Label="Article" Required="true">
             @foreach (var article in _articles)
             {
                 <MudSelectItem Value="article.Id">@article.Name (@article.Brand)</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField @bind-Value="_model.SerialNumber" Label="Serial Number" Required="true" />
+        <MudTextField @bind-Value="_serialNumber" Label="Serial Number" Required="true" />
         <MudDatePicker @bind-Date="_purchaseDate" Label="Purchase Date" Required="true" />
-        <MudTextField @bind-Value="_model.Description" Label="Description" Lines="4" Required="true" />
+        <MudTextField @bind-Value="_description" Label="Description" Lines="4" Required="true" />
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit" Disabled="_loading">Submit</MudButton>
     </MudForm>
 </MudPaper>
@@ -24,7 +24,9 @@
     private MudForm? _form;
     private bool _loading;
     private List<ArticleResponse> _articles = new();
-    private CreateClaimRequest _model = new(Guid.Empty, string.Empty, DateOnly.FromDateTime(DateTime.Today), string.Empty);
+    private Guid _articleId;
+    private string _serialNumber = string.Empty;
+    private string _description = string.Empty;
     private DateTime? _purchaseDate = DateTime.Today;
 
     protected override async Task OnInitializedAsync()
@@ -49,10 +51,12 @@
         _loading = true;
         try
         {
-            var request = _model with { PurchaseDate = DateOnly.FromDateTime(_purchaseDate.Value) };
+            var request = new CreateClaimRequest(_articleId, _serialNumber, DateOnly.FromDateTime(_purchaseDate.Value), _description);
             await Api.CreateClaimAsync(request);
             Snackbar.Add("Claim submitted.", Severity.Success);
-            _model = new CreateClaimRequest(Guid.Empty, string.Empty, DateOnly.FromDateTime(DateTime.Today), string.Empty);
+            _articleId = Guid.Empty;
+            _serialNumber = string.Empty;
+            _description = string.Empty;
         }
         catch
         {

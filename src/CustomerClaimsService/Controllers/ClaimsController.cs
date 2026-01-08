@@ -2,6 +2,7 @@ using System.Security.Claims;
 using CustomerClaimsService.Data;
 using CustomerClaimsService.DTOs;
 using CustomerClaimsService.Models;
+using ClaimEntity = CustomerClaimsService.Models.Claim;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,7 @@ public class ClaimsController : ControllerBase
             _db.Customers.Add(customer);
         }
 
-        var claim = new Claim
+        var claim = new ClaimEntity
         {
             Id = Guid.NewGuid(),
             CustomerId = customer.Id,
@@ -135,6 +136,6 @@ public class ClaimsController : ControllerBase
         return NoContent();
     }
 
-    private static ClaimResponse Map(Claim claim) =>
+    private static ClaimResponse Map(ClaimEntity claim) =>
         new(claim.Id, claim.CustomerId, claim.ArticleId, claim.SerialNumber, claim.PurchaseDate, claim.Description, claim.Status, claim.CreatedAt, claim.UpdatedAt);
 }

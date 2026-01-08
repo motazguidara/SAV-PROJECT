@@ -9,11 +9,11 @@
 <MudPaper Class="pa-4">
     <MudStack Row="true" Spacing="2" Class="mb-4">
         <MudSelect T="ClaimStatus?" @bind-Value="_statusFilter" Label="Status">
-            <MudSelectItem Value="null">All</MudSelectItem>
-            <MudSelectItem Value="ClaimStatus.New">New</MudSelectItem>
-            <MudSelectItem Value="ClaimStatus.InProgress">In Progress</MudSelectItem>
-            <MudSelectItem Value="ClaimStatus.Resolved">Resolved</MudSelectItem>
-            <MudSelectItem Value="ClaimStatus.Rejected">Rejected</MudSelectItem>
+            <MudSelectItem T="ClaimStatus?" Value="@((ClaimStatus?)null)">All</MudSelectItem>
+            <MudSelectItem T="ClaimStatus?" Value="@(ClaimStatus.New)">New</MudSelectItem>
+            <MudSelectItem T="ClaimStatus?" Value="@(ClaimStatus.InProgress)">In Progress</MudSelectItem>
+            <MudSelectItem T="ClaimStatus?" Value="@(ClaimStatus.Resolved)">Resolved</MudSelectItem>
+            <MudSelectItem T="ClaimStatus?" Value="@(ClaimStatus.Rejected)">Rejected</MudSelectItem>
         </MudSelect>
         <MudButton Variant="Variant.Filled" OnClick="Load">Refresh</MudButton>
     </MudStack>
@@ -40,9 +40,9 @@
                 <MudTd>@context.Status</MudTd>
                 <MudTd>@context.CreatedAt.ToLocalTime().ToString("g")</MudTd>
                 <MudTd>
-                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => Navigation.NavigateTo($"/manager/claims/{context.Id}")">Open</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="() => UpdateStatus(context.Id, ClaimStatus.InProgress)">Accept</MudButton>
-                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="() => UpdateStatus(context.Id, ClaimStatus.Rejected)">Reject</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => Navigation.NavigateTo($"/manager/claims/{context.Id}"))">Open</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => UpdateStatus(context.Id, ClaimStatus.InProgress))">Accept</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => UpdateStatus(context.Id, ClaimStatus.Rejected))">Reject</MudButton>
                 </MudTd>
             </RowTemplate>
         </MudTable>

@@ -16,7 +16,7 @@ else
 {
     <MudPaper Class="pa-4 mb-4">
         <MudText Typo="Typo.subtitle1">Status</MudText>
-        <MudChip Color="Color.Primary">@_claim.Status</MudChip>
+        <MudChip T="ClaimStatus" Value="_claim.Status" Color="Color.Primary">@_claim.Status</MudChip>
         <MudDivider Class="my-3" />
         <MudText Typo="Typo.subtitle2">Description</MudText>
         <MudText>@_claim.Description</MudText>
